@@ -47,11 +47,8 @@ const TextToSpeech = () => {
     setLoading(true);
     try {
       setAudioUrl(null)
-      const proxyUrl = "https://corsproxy.io/?";
-        const apiUrl = "http://api.zyphra.com/v1/audio/text-to-speech";
-        const proxiedUrl = proxyUrl + encodeURIComponent(apiUrl);
-
-      const client = new ZyphraClient({ apiKey, baseUrl: proxiedUrl });
+      
+      const client = new ZyphraClient({ apiKey,  baseUrl: '/api/v1/audio/text-to-speech' });
       const audioBlob = await client.audio.speech.create({
         text,
         speaker_audio: file,
