@@ -145,12 +145,15 @@ const TextToSpeech = () => {
       }
         <div className="lg:w-[70%] bg-gray-800 p-1 rounded-lg">
         <textarea
-          className="w-full h-[50vh] p-4 focus:outline-none text-white text-sm rounded-lg"
+          className="w-full h-[45vh] p-4 focus:outline-none text-white text-sm rounded-lg"
           value={text}
+          maxLength={20000}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter text to convert to speech"
         />
-
+<div className="static mb-4 ml-2 text-gray-400 text-sm">
+  <span>{text?.length || 0}</span> / <span>20000</span>
+</div>
         <button
           onClick={handleTextToSpeech}
           className=" w-full cursor-pointer p-3 bg-orange-600 text-white font-bold rounded hover:bg-orange-700  transition disabled:bg-gray-800"
