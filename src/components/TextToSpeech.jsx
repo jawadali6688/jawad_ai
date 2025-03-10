@@ -3,6 +3,7 @@ import { ZyphraClient } from "@zyphra/client";
 import VoicePlayer from "./VoicePlayer";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import axios from "axios";
 const TextToSpeech = () => {
 
   const messages = [
@@ -33,103 +34,119 @@ const TextToSpeech = () => {
 
   const handleTextToSpeech = async () => {
     if (!text) {
-      toast.error("Bhai kuch text to likh lo!");
-      return;
+        toast.error("Bhai kuch text to likh lo!");
+        return;
     }
     if (!apiKey) {
-      toast.error("Bhai API key to enter kro!");
-      return;
+        toast.error("Bhai API key to enter kro!");
+        return;
     }
     if (!file) {
-      toast.error("Bhai sample audio to do pehly!");
-      return;
+        toast.error("Bhai sample audio to do pehly!");
+        return;
     }
+    
     setLoading(true);
+    setAudioUrl(null);
+
     try {
-      setAudioUrl(null)
-      
-      const client = new ZyphraClient({ apiKey,  baseUrl: '/api/v1/audio/text-to-speech' });
-      const audioBlob = await client.audio.speech.create({
-        text,
-        speaker_audio: file,
-        mime_type: "audio/webm",
-        speaking_rate: 13,
-        model: "zonos-v0.1-hybrid",
-        fmax: 8000,
-        vqscore: 0.8,
-        pitch_std: 80,
-        emotion: {
-          sadness: 0.4,
-          happiness: 0.5,
-          anger: 0.5,
-          other: 0.2,
-          neutral: 0.2,
-          fear: 0.1
-        }
-      });
+        const response = await axios.post(
+            "https://api-backend-41dw.onrender.com/jawad_voice_generating",
+            { text, sampleAudio: file, apiKey },
+            {
+                responseType: "arraybuffer", // Important for binary data
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
 
-      const responseBlob = new Blob([audioBlob], { type: "audio/mpeg" });
+        // Convert the response data into a Blob
+        const responseBlob = new Blob([response.data], { type: "audio/mpeg" });
 
-      const url = URL.createObjectURL(responseBlob);
-      setAudioUrl(url);
-      console.log(url, "generated")
-      toast.success("Bhai voice ban gyii mzy kro!")
+        // Generate a URL for the audio element
+        const url = URL.createObjectURL(responseBlob);
+        setAudioUrl(url);
+
+        toast.success("Bhai voice ban gyii mzy kro!");
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("An error occurred while generating the audio.");
+        console.error("Error:", error);
+        toast.error("An error occurred while generating the audio.");
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
-  };
+};
 
 
-  const validateFile = (file) => {
-    if (!file) return false;
-    const allowedExtensions = ["mp3", "wav"];
-    const fileExtension = file.name.split(".").pop().toLowerCase();
-    const isValidType = allowedExtensions.includes(fileExtension);
-    const isValidSize = file.size <= 10 * 1024 * 1024;
 
-    if (!isValidType) {
-      toast.error("Invalid file type. Only MP3 and WAV are allowed.")
-      return false;
-    }
-    if (!isValidSize) {
-      toast.error("File size must be under 10MB.")
-      return false;
-    }
-
-    const audio = new Audio(URL.createObjectURL(file));
-    audio.onloadedmetadata = () => {
-      if (audio.duration > 120) {
-        toast.error("Audio duration must be under 2 minutes.")
-        return false
+    // File validation function
+    const validateFile = (file) => {
+      return new Promise((resolve) => {
+        if (!file) return resolve(false);
+  
+        const allowedExtensions = ["mp3", "wav"];
+        const fileExtension = file.name.split(".").pop().toLowerCase();
+        const isValidType = allowedExtensions.includes(fileExtension);
+        const isValidSize = file.size <= 5 * 1024 * 1024; // Max size 5MB
+  
+        if (!isValidType) {
+          toast.error("Invalid file type. Only MP3 and WAV are allowed.");
+          return resolve(false);
+        }
+  
+        if (!isValidSize) {
+          toast.error("File size must be under 5MB.");
+          return resolve(false);
+        }
+  
+        const objectUrl = URL.createObjectURL(file);
+        const audio = new Audio(objectUrl);
+  
+        audio.onloadedmetadata = () => {
+          if (audio.duration > 120) {
+            toast.error("Audio duration must be under 2 minutes.");
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+          URL.revokeObjectURL(objectUrl); // Clean up URL
+        };
+  
+        audio.onerror = () => {
+          toast.error("Invalid audio file.");
+          resolve(false);
+          URL.revokeObjectURL(objectUrl); // Clean up URL
+        };
+      });
+    };
+  
+    // Convert file to Base64
+    const fileToBase64 = async (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+    };
+  
+    // Handle file selection
+    const handleFileChange = async (e) => {
+      const selectedFile = e.target.files[0];
+  
+      // Validate the file asynchronously
+      const isValid = await validateFile(selectedFile);
+  
+      if (isValid) {
+        const base64File = await fileToBase64(selectedFile);
+        setFile(base64File);
+        toast.success("File Selected!");
+      } else {
+        setFile(null);
+        e.target.value = null;
       }
     };
-    return true;
-  };
 
-  const fileToBase64 = async (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(",")[1]);
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleFileChange = async (e) => {
-    const selectedFile = e.target.files[0];
-    const validity = validateFile(selectedFile)
-    console.log(validity)
-    if (validity === true) {
-      const base64File = await fileToBase64(selectedFile);
-      setFile(base64File);
-      toast.success("File Selected!")
-    }
-    else {
-      setFile(null)
-    }
-  };
 
   return (
     <>
@@ -148,12 +165,12 @@ const TextToSpeech = () => {
         <textarea
           className="w-full h-[45vh] p-4 focus:outline-none text-white text-sm rounded-lg"
           value={text}
-          maxLength={20000}
+          maxLength={25000}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter text to convert to speech"
         />
 <div className="static mb-4 ml-2 text-gray-400 text-sm">
-  <span>{text?.length || 0}</span> / <span>20000</span>
+  <span>{text?.length || 0}</span> / <span>25000</span>
 </div>
         <button
           onClick={handleTextToSpeech}
@@ -179,6 +196,9 @@ const TextToSpeech = () => {
           <h1 className="py-2 text-center text-white text-md">Settings</h1>
                        <div className="flex flex-col gap-4">
                        <div className="flex flex-col ">
+                        <span className="text-sm px-2 mb-2 text-green-600 border-b-2 pb-1 border-b-gray-500">
+                          Please use mp3 or wav file with max size of 5mb for automatic voice cloning during voice generating.
+                        </span>
                         <label htmlFor="" className="text-gray-200 px-4 pb-1">Sample Audio</label>
                        <input 
                        
@@ -186,6 +206,11 @@ const TextToSpeech = () => {
                        </div>
                       
                        <div className="flex flex-col ">
+                    
+                         
+                          <a 
+                          target="_blank"
+                          href="https://playground.zyphra.com/settings/api-keys" className="flex py-2 px-2 text-green-600 underline underline-offset-8 hover:text-orange-600">Click here to get API Key</a>
                         <label htmlFor="" className="text-gray-200 px-4 pb-1">API Key</label>
                        <input type="text" className="py-4 px-4 outline-none border mx-2 text-sm  border-orange-500 duration-200 shadow-md focus:shadow-orange-600 rounded-md text-white" placeholder="API Key" onChange={(e) => setApiKey(e.target.value)} />
                        </div>
