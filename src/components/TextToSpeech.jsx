@@ -54,22 +54,24 @@ const TextToSpeech = () => {
             "https://api-backend-41dw.onrender.com/jawad_voice_generating",
             { text, sampleAudio: file, apiKey },
             {
-                responseType: "arraybuffer", // Important for binary data
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                responseType: "arraybuffer", 
+                
             }
         );
 
+        console.log(response)
         // Convert the response data into a Blob
-        const responseBlob = new Blob([response.data], { type: "audio/mpeg" });
+        // const responseBlob = new Blob([response.data], { type: "audio/mpeg" });
 
-        // Generate a URL for the audio element
-        const url = URL.createObjectURL(responseBlob);
+        // // Generate a URL for the audio element
+        // const url = URL.createObjectURL(responseBlob);
+        // setAudioUrl(url);
+        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
-
         toast.success("Bhai voice ban gyii mzy kro!");
     } catch (error) {
+        setAudioUrl(null);
         console.error("Error:", error);
         toast.error("An error occurred while generating the audio.");
     } finally {
@@ -154,6 +156,7 @@ const TextToSpeech = () => {
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     className="flex flex-col lg:flex-row gap-5">
+      
       {
         errorMessage && (
           <h1>

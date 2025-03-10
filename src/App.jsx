@@ -19,6 +19,7 @@ function App() {
 />
   <div className="mb-10">
   <Navbar tab={tab} setTab={setTab} />
+  <h1 className="text-gray-100 mx-10">In case of any issue, tell us with screenshot, We are working to make it cool! Thank You!</h1>
   </div>
     {
       tab === "text_to_speech" && (
