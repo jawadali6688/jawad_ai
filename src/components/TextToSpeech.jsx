@@ -4,7 +4,7 @@ import VoicePlayer from "./VoicePlayer";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import axios from "axios";
-const TextToSpeech = () => {
+const TextToSpeech = ({user}) => {
 
   const messages = [
     "Grabbing some pixels...",
@@ -48,14 +48,14 @@ const TextToSpeech = () => {
     
     setLoading(true);
     setAudioUrl(null);
-
+// http://localhost:8000/
+// https://api-backend-41dw.onrender.com
     try {
         const response = await axios.post(
             "https://api-backend-41dw.onrender.com/jawad_voice_generating",
             { text, sampleAudio: file, apiKey },
             {
                 responseType: "arraybuffer", 
-                
             }
         );
 
@@ -168,12 +168,12 @@ const TextToSpeech = () => {
         <textarea
           className="w-full h-[45vh] p-4 focus:outline-none text-white text-sm rounded-lg"
           value={text}
-          maxLength={25000}
+          maxLength={user?.characters}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter text to convert to speech"
         />
 <div className="static mb-4 ml-2 text-gray-400 text-sm">
-  <span>{text?.length || 0}</span> / <span>25000</span>
+  <span>{text?.length || 0}</span> / <span>{user?.characters}</span>
 </div>
         <button
           onClick={handleTextToSpeech}
